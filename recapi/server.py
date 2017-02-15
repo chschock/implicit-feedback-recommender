@@ -1,9 +1,11 @@
-from flask import Flask, jsonify
-from flask_restful import Api, Resource, reqparse
+import os
+from flask import jsonify
+from flask_restful import Resource, reqparse
 
-app = Flask(__name__)
-api = Api(app)
+from recapi import app, api, db
+from recapi.cache import Cache
 
+cache = Cache(db)
 
 users = dict()
 

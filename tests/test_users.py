@@ -7,8 +7,8 @@ import random
 # import psycopg2
 from sqlalchemy.exc import IntegrityError
 
+from recapi import app, db
 from recapi.config import basedir
-from recapi.server import app, db
 from recapi.models import Like
 from recapi.cache import Cache
 
