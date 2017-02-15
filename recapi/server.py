@@ -35,8 +35,21 @@ class LikesAPI(Resource):
         args = self.reqparse.parse_args()
         cache.delete(Like(user_id, item_id))
 
+class RecommendationsAPI(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        # self.reqparse.add_argument('user_id', type=str, required=True, location='json')
+        # self.reqparse.add_argument('like_id', type=str, location='json')
+        super(RecommendationsAPI, self).__init__()
+
+    def get(self, user_id):
+        args = self.reqparse.parse_args()
+        return jsonify('not yet implemented')
+
 # api.add_resource(UserAPI, '/v1/users/<string:user_id>', endpoint='user')
-api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='userlike')
+api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='likes')
+api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
+
 
 cache = None
 
