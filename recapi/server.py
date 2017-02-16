@@ -5,8 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 from recapi.config import DevelopmentConfig
 
-from recapi.database import init_db
-
 app = Flask(__name__)
 api = Api(app)
 app.config.from_object(os.environ['APP_SETTINGS'])
