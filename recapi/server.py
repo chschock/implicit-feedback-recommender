@@ -2,7 +2,6 @@ import os
 from flask import Flask
 from flask_restful import Api, abort
 from flask_sqlalchemy import SQLAlchemy
-
 from recapi.config import DevelopmentConfig
 
 app = Flask(__name__)
@@ -42,12 +41,12 @@ class RecommendationsAPI(Resource):
 
     def get(self, user_id):
         args = self.reqparse.parse_args()
-        return jsonify('not yet implemented')
+        rmdr = cache.build_recommender()
+        result = rmdr.recommend(user_id, 10, alpha=2, beta=0.5)
+        return jsonify(result)
 
-# api.add_resource(UserAPI, '/v1/users/<string:user_id>', endpoint='user')
 api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='likes')
 api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
-
 
 cache = None
 
@@ -59,48 +58,3 @@ def init_api():
 if __name__ == '__main__':
     init_api()
     app.run(debug = True)
-
-
-# class UserListAPI(Resource):
-#     def __init__(self):
-#         self.reqparse = reqparse.RequestParser()
-#         self.reqparse.add_argument('page', type=int, required=False, location='json')
-#         self.reqparse.add_argument('n_results', type=int, required=False, location='json')
-#         super(UserListAPI, self).__init__()
-#
-#     def get(self):
-#         return jsonify(users.keys())
-#
-# api.add_resource(UserListAPI, '/v1/users', endpoint='users')
-
-# class UserAPI(Resource):
-#     def __init__(self):
-#         self.reqparse = reqparse.RequestParser()
-#         self.reqparse.add_argument('user_id', type=str, location='json')
-#         super(UserAPI, self).__init__()
-#
-#     def get(self, user_id):
-#         return jsonify(len(cache))
-#         # return jsonify('hello')
-#
-#     def delete(self, user_id):
-#         args = self.reqparse.parse_args()
-#         if user_id not in users:
-#             abort(404)
-#         del users[user_id]
-#         return jsonify( { 'user': user_id } )
-
-# class UserLikeListAPI(Resource):
-#     def __init__(self):
-#         self.reqparse = reqparse.RequestParser()
-#         self.reqparse.add_argument('page', type=int, required=False, location='json')
-#         self.reqparse.add_argument('n_results', type=int, required=False, location='json')
-#         super(UserListAPI, self).__init__()
-#
-#     def get(self):
-#         args = self.reqparse.parse_args()
-#         if user_id not in users:
-#             abort(404)
-#         return jsonify(list(users[user_id]))
-#
-# api.add_resource(UserLikeListAPI, '/v1/users/<string:user_id>/likes', endpoint='userlikes')

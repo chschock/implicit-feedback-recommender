@@ -1,23 +1,12 @@
-from .models import DbLike
-
-# from sqlalchemy.dialects.postgresql import insert
-# from sqlalchemy import MetaData
-#
-# def insert_ignore(table, likes):
-#     values = [dict(user_id=u, item_id=i) for u, i in likes]
-#     insert_stmt = insert('likes').values(values
-#         ).on_conflict_do_nothing(index_elements=['user_id','item_id'])
-#     return insert_stmt
-
-    # stmt = insert_ignore('likes', likes)
-    # values = [dict(user_id=u, item_id=i) for u, i in likes]
-    # stmt = insert('likes').values([{'user_id': 'qwe', 'item_id': 'bnm'}])
-    # self.db.engine.execute(stmt)
-
 from collections import namedtuple, defaultdict
+import numpy as np
+from .models import DbLike
+from .recommender import Recommender
+import time
 Like = namedtuple('Like', 'user_id item_id')
 
 class Cache(object):
+
     def __init__(self, db):
         self.db = db
         self.user_map = defaultdict(lambda: len(self.user_map))
@@ -66,3 +55,16 @@ class Cache(object):
 
     def __len__(self):
         return len(self.likes)
+
+    def build_recommender(self):
+        user_ics = np.array(self.user_ics, dtype=np.uint32)
+        item_ics = np.array(self.item_ics, dtype=np.uint32)
+        ratings = np.array(self.ratings, dtype=np.int32)
+        users, items = [None] * len(self.user_map), [None] * len(self.item_map)
+        for user_id, pos in self.user_map.items():
+            users[pos] = user_id
+        for item_id, pos in self.item_map.items():
+            items[pos] = item_id
+        kwargs = dict(min_item_freq=5, min_user_freq=1)
+        rmdr = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
+        return rmdr
