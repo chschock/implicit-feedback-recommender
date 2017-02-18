@@ -76,6 +76,7 @@ class CacheTestCase(unittest.TestCase):
         extra_likes = unique_likes[:10]
         for user_id, item_id in unique_likes + extra_likes:
             result = self.client.post('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
+        self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), len(unique_likes))
 
     def test_likes_api_delete(self):
@@ -85,8 +86,8 @@ class CacheTestCase(unittest.TestCase):
             result = self.client.post('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
         for user_id, item_id in extra_likes:
             result = self.client.delete('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
+        self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), len(unique_likes) - len(extra_likes))
-
 
 class RecommenderTestCase(unittest.TestCase):
     def setUp(self):
@@ -97,10 +98,10 @@ class RecommenderTestCase(unittest.TestCase):
         with app.app_context():
             db.drop_all()
             db.create_all()
-        cache = Cache(db)
+        local_cache = Cache(db)
         for i in range(10):
-            cache.add_many(random_likes(5000))
-        self.likes = list(cache.likes)
+            local_cache.add_many(random_likes(50))
+        self.likes = list(local_cache.likes)
         init_api()
 
     def tearDown(self):
@@ -111,4 +112,5 @@ class RecommenderTestCase(unittest.TestCase):
     def test_recommendations_api(self):
         for i in range(10):
             result = self.client.get('/v1/recommendations/user/' + self.likes[i].user_id)
-        print('result: %s' % result.data.decode())
+            self.assertEqual(result.status_code, 200)
+        # print('result: %s' % result.data.decode())
