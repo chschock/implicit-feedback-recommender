@@ -1,5 +1,5 @@
 import os
-from flask import Flask
+from flask import Flask, current_app
 from flask_restful import Api, abort
 from flask_sqlalchemy import SQLAlchemy
 from recapi.config import DevelopmentConfig
@@ -14,8 +14,6 @@ from flask import jsonify
 from flask_restful import Resource, reqparse
 from recapi.cache import Cache, Like
 
-cache = None
-
 ID_REGEX = re.compile(r'[a-zA-Z0-9\-_]+')
 
 def abort_if_no_id(string, hint):
@@ -27,12 +25,12 @@ class LikesAPI(Resource):
     def post(self, user_id, item_id):
         abort_if_no_id(user_id, 'user_id')
         abort_if_no_id(user_id, 'item_id')
-        cache.add(Like(user_id, item_id))
+        current_app.cache.add(Like(user_id, item_id))
 
     def delete(self, user_id, item_id):
         abort_if_no_id(user_id, 'user_id')
         abort_if_no_id(user_id, 'item_id')
-        cache.delete(Like(user_id, item_id))
+        current_app.cache.delete(Like(user_id, item_id))
 
 def abort_if_no_likes(likes):
     for like in likes:
@@ -53,13 +51,13 @@ class LikesBulkAPI(Resource):
         args = self.reqparse.parse_args()
         abort_if_no_likes(args['likes'])
         likes = [Like(pair[0], pair[1]) for pair in args['likes']]
-        cache.add_many(likes)
+        current_app.cache.add_many(likes)
 
 class RecommendationsAPI(Resource):
 
     def get(self, user_id):
         abort_if_no_id(user_id, 'user_id')
-        rmdr = cache.build_recommender()
+        rmdr = current_app.cache.build_recommender()
         result = rmdr.recommend(user_id, 10, alpha=2, beta=0.5)
         return jsonify(result)
 
@@ -67,12 +65,9 @@ api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id
 api.add_resource(LikesBulkAPI, '/v1/likes/bulk', endpoint='likes_bulk')
 api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
 
-cache = None
-
 def init_api():
-    global cache
     with app.app_context():
-        cache = Cache(db)
+        current_app.cache = Cache(db)
 
 if __name__ == '__main__':
     init_api()

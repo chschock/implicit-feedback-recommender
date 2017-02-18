@@ -7,7 +7,7 @@ import json
 
 from sqlalchemy.exc import IntegrityError
 
-from recapi.server import app, db, init_api, cache
+from recapi.server import app, db, init_api
 from recapi.config import basedir
 from recapi.models import DbLike
 from recapi.cache import Cache, Like
