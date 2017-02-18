@@ -29,13 +29,13 @@ class Cache(object):
         self.changes = 0
 
     def add_many(self, likes):
-        for like in likes:
+        new_likes = [like for like in set(likes) if like not in self.likes]
+        for like in new_likes:
             assert isinstance(like, Like)
             if like not in self.likes:
                 self.db.session.add(DbLike(*like))
         self.db.session.commit()
 
-        new_likes = [like for like in likes if like not in self.likes]
         self.likes.update(new_likes)
         self.user_ics.extend([self.user_map[like.user_id] for like in new_likes])
         self.item_ics.extend([self.item_map[like.item_id] for like in new_likes])
