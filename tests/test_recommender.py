@@ -3,6 +3,7 @@ import unittest
 import string
 import random
 import time
+import json
 
 from sqlalchemy.exc import IntegrityError
 
@@ -71,6 +72,23 @@ class CacheTestCase(unittest.TestCase):
         cache = Cache(db)
         self.assertCountEqual(cache.likes, unique_likes)
 
+
+class LikesTestCase(unittest.TestCase):
+    def setUp(self):
+        app.config['TESTING'] = True
+        app.config['WTF_CSRF_ENABLED'] = False
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///api'
+        self.client = app.test_client()
+        with app.app_context():
+            db.drop_all()
+            db.create_all()
+        init_api()
+
+    def tearDown(self):
+        db.session.remove()
+        with app.app_context():
+            db.drop_all()
+
     def test_likes_api_post(self):
         unique_likes = random_likes(20)
         extra_likes = unique_likes[:10]
@@ -88,6 +106,26 @@ class CacheTestCase(unittest.TestCase):
             result = self.client.delete('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), len(unique_likes) - len(extra_likes))
+
+    def test_likes_bulk_api_post(self):
+        unique_likes = random_likes(20)
+        extra_likes = unique_likes[:10]
+        data = {'likes':
+            [(l.user_id, l.item_id) for l in unique_likes + extra_likes]
+        }
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps(data),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(DbLike.query.all()), len(unique_likes))
+
+    def test_likes_bulk_api_post_empty(self):
+        data = {'likes': []}
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps(data),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(DbLike.query.all()), 0)
 
 class RecommenderTestCase(unittest.TestCase):
     def setUp(self):
