@@ -67,13 +67,17 @@ class Recommender(object):
             remove_seen=True, no_mat=False, no_bias=False, return_indices=False):
         uim = self.M_0 if no_mat else self.M_w.tocsr()
         item_bias = self.zero_item_bias if no_bias else self.popularity_item_bias
-        i_user = self.user_map[user_id]
 
-        user_score = spadot(uim, uim[i_user, :])
-        user_score.data = np.power(user_score.data, alpha)
-        item_score = (user_score.T * uim).toarray().ravel() + beta * item_bias
-        if remove_seen:
-            item_score[(uim[i_user, :] > 0).tocoo().col] = 0
+        if user_id in self.user_map:
+            i_user = self.user_map[user_id]
+
+            user_score = spadot(uim, uim[i_user, :])
+            user_score.data = np.power(user_score.data, alpha)
+            item_score = (user_score.T * uim).toarray().ravel() + beta * item_bias
+            if remove_seen:
+                item_score[(uim[i_user, :] > 0).tocoo().col] = 0
+        else:
+            item_score = self.popularity_item_bias
         item_order = np.argsort(item_score)[-1:-n_rec-1:-1]
 
         if return_indices:
