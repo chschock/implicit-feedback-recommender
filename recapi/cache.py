@@ -87,5 +87,5 @@ class Cache(object):
         for item_id, pos in self.item_map.items():
             items[pos] = item_id
         kwargs = dict(min_item_freq=5, min_user_freq=1)
-        rmdr = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
-        return rmdr
+        self.recommender = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
+        return self.recommender
