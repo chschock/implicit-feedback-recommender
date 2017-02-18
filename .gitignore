@@ -1,0 +1,8 @@
+data/
+literature/
+backup/
+experiment/.ipynb_checkpoints
+recapi.egg-info/
+__pychache__/
+*/__pycache__
+experiment/
