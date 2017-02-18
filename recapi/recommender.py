@@ -51,8 +51,8 @@ class Recommender(object):
             (np.log(idf), [0]), shape=[n_items, n_items])
         self.M_w = self.M.dot(log_idf_eye)
 
-        # square
-        self.M_w.data = np.power(self.M_w.data, 2)
+        # # square: no consistent improvement
+        # self.M_w.data = np.power(self.M_w.data, 2)
 
         # normalize for cosine similarity
         self.M_w = normalize(self.M_w, axis=1, norm='l2')
