@@ -1,18 +1,8 @@
-import os
-from flask import Flask, current_app
-from flask_restful import Api, abort
-from flask_sqlalchemy import SQLAlchemy
-from recapi.config import DevelopmentConfig
-import re
-
-app = Flask(__name__)
-api = Api(app)
-app.config.from_object(os.environ['APP_SETTINGS'])
-db = SQLAlchemy(app)
-
-from flask import jsonify
-from flask_restful import Resource, reqparse
+from flask import jsonify, current_app
+from flask_restful import Resource, reqparse, abort
+from recapi import app, api, db
 from recapi.cache import Cache, Like
+import re
 
 ID_REGEX = re.compile(r'[a-zA-Z0-9\-_]+')
 
@@ -71,4 +61,4 @@ def init_api():
 
 if __name__ == '__main__':
     init_api()
-    app.run(debug = True)
+    app.run()

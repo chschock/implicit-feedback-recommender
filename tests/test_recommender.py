@@ -5,13 +5,9 @@ import random
 import time
 import json
 
-from sqlalchemy.exc import IntegrityError
-
 from recapi.server import app, db, init_api
-from recapi.config import basedir
 from recapi.models import DbLike
 from recapi.cache import Cache, Like
-
 
 LC = string.ascii_lowercase[:10]
 UC = string.ascii_uppercase[:10]
@@ -27,9 +23,7 @@ def random_likes(count):
 
 class CacheTestCase(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///api'
+        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
         with app.app_context():
             db.drop_all()
@@ -75,9 +69,7 @@ class CacheTestCase(unittest.TestCase):
 
 class LikesTestCase(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///api'
+        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
         with app.app_context():
             db.drop_all()
@@ -129,9 +121,7 @@ class LikesTestCase(unittest.TestCase):
 
 class RecommenderTestCase(unittest.TestCase):
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///api'
+        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
         with app.app_context():
             db.drop_all()

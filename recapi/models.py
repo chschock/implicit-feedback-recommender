@@ -1,4 +1,4 @@
-from recapi.server import db
+from recapi import db
 
 class DbLike(db.Model):
     __tablename__ = 'likes'
