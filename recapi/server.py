@@ -51,9 +51,16 @@ class RecommendationsAPI(Resource):
         result = rmdr.recommend(user_id, 10, alpha=2, beta=0.5)
         return jsonify(result)
 
+class MaintenanceAPI(Resource):
+
+    def delete(self):
+        db.drop_all()
+        db.create_all()
+
 api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='likes')
 api.add_resource(LikesBulkAPI, '/v1/likes/bulk', endpoint='likes_bulk')
 api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
+api.add_resource(MaintenanceAPI, '/v1/maintenance/delete-all-data', endpoint='maintenance')
 
 def init_api():
     with app.app_context():

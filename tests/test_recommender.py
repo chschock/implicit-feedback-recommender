@@ -138,3 +138,16 @@ class RecommenderTestCase(unittest.TestCase):
             result = self.client.get('/v1/recommendations/user/' + self.likes[i].user_id)
             self.assertEqual(result.status_code, 200)
         # print('result: %s' % result.data.decode())
+
+class MaintenanceTestCase(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+        common_setup()
+        init_api()
+
+    def tearDown(self):
+        common_teardown()
+
+    def test_maintenance_api(self):
+        result = self.client.delete('/v1/maintenance/delete-all-data')
+        self.assertEqual(result.status_code, 200)
