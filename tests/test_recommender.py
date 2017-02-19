@@ -21,19 +21,25 @@ def random_like():
 def random_likes(count):
     return random.sample(LIKES, count)
 
+def common_setup():
+    app.config.from_object('recapi.config.TestingConfig')
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+
+def common_teardown():
+    db.session.remove()
+    with app.app_context():
+        db.drop_all()
+
 class CacheTestCase(unittest.TestCase):
     def setUp(self):
-        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
+        common_setup()
         init_api()
 
     def tearDown(self):
-        db.session.remove()
-        with app.app_context():
-            db.drop_all()
+        common_teardown()
 
     def test_db_insert_unique(self):
         unique_likes = random_likes(1000)
@@ -69,17 +75,12 @@ class CacheTestCase(unittest.TestCase):
 
 class LikesTestCase(unittest.TestCase):
     def setUp(self):
-        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
+        common_setup()
         init_api()
 
     def tearDown(self):
-        db.session.remove()
-        with app.app_context():
-            db.drop_all()
+        common_teardown()
 
     def test_likes_api_post(self):
         unique_likes = random_likes(20)
@@ -121,11 +122,8 @@ class LikesTestCase(unittest.TestCase):
 
 class RecommenderTestCase(unittest.TestCase):
     def setUp(self):
-        app.config.from_object('recapi.config.TestingConfig')
         self.client = app.test_client()
-        with app.app_context():
-            db.drop_all()
-            db.create_all()
+        common_setup()
         local_cache = Cache(db)
         for i in range(10):
             local_cache.add_many(random_likes(50))
@@ -133,9 +131,7 @@ class RecommenderTestCase(unittest.TestCase):
         init_api()
 
     def tearDown(self):
-        db.session.remove()
-        with app.app_context():
-            db.drop_all()
+        common_teardown()
 
     def test_recommendations_api(self):
         for i in range(10):
