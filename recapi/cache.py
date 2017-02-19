@@ -6,6 +6,7 @@ import time
 Like = namedtuple('Like', 'user_id item_id')
 
 REBUILD_RECOMMENDER_CHANGE_THRESHOLD = 100
+REFRESH_CHUNK_SIZE = 10000
 
 class Cache(object):
     """
@@ -20,7 +21,9 @@ class Cache(object):
         self.user_map = defaultdict(lambda: len(self.user_map))
         self.item_map = defaultdict(lambda: len(self.item_map))
 
-        self.likes = set([Like(*like.tuple) for like in DbLike.query.all()])
+        self.likes = set([Like(*like.tuple)
+            for like in db.session.query(DbLike).yield_per(REFRESH_CHUNK_SIZE)])
+
         self.user_ics = [self.user_map[like.user_id] for like in self.likes]
         self.item_ics = [self.item_map[like.item_id] for like in self.likes]
         self.ratings = [1] * len(self.likes)
