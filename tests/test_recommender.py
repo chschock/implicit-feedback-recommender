@@ -5,7 +5,10 @@ import random
 import time
 import json
 
-from recapi.server import app, db, init_api
+from flask import Flask
+from recapi.server import create_app, reset_cache
+from recapi.config import TestingConfig
+from recapi.extensions import db
 from recapi.models import DbLike
 from recapi.cache import Cache, Like
 
@@ -15,31 +18,31 @@ USER_IDS = [a + b + c for a in UC for b in LC for c in LC]
 ITEM_IDS = [a + b for a in LC for b in LC]
 LIKES = [Like(user, item) for user in USER_IDS for item in ITEM_IDS]
 
+app = create_app(TestingConfig)
+app.config.from_object(TestingConfig)
+
 def random_like():
     return Like(random.choice(USER_IDS[:5]), random.choice(ITEM_IDS[:5]))
 
 def random_likes(count):
     return random.sample(LIKES, count)
 
-def common_setup():
-    app.config.from_object('recapi.config.TestingConfig')
-    with app.app_context():
+class FlaskTestCase(unittest.TestCase):
+    def setUp(self):
+        self.app_context = app.app_context()
+        self.app_context.push()
+        db.session.remove()
         db.drop_all()
         db.create_all()
-
-def common_teardown():
-    db.session.remove()
-    with app.app_context():
-        db.drop_all()
-
-class CacheTestCase(unittest.TestCase):
-    def setUp(self):
+        reset_cache(app)
         self.client = app.test_client()
-        common_setup()
-        init_api()
 
     def tearDown(self):
-        common_teardown()
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+class CacheTestCase(FlaskTestCase):
 
     def test_db_insert_unique(self):
         unique_likes = random_likes(1000)
@@ -73,14 +76,7 @@ class CacheTestCase(unittest.TestCase):
         self.assertCountEqual(cache.likes, unique_likes)
 
 
-class LikesTestCase(unittest.TestCase):
-    def setUp(self):
-        self.client = app.test_client()
-        common_setup()
-        init_api()
-
-    def tearDown(self):
-        common_teardown()
+class LikesTestCase(FlaskTestCase):
 
     def test_likes_api_post(self):
         unique_likes = random_likes(20)
@@ -120,18 +116,15 @@ class LikesTestCase(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), 0)
 
-class RecommenderTestCase(unittest.TestCase):
-    def setUp(self):
-        self.client = app.test_client()
-        common_setup()
-        local_cache = Cache(db)
-        for i in range(10):
-            local_cache.add_many(random_likes(50))
-        self.likes = list(local_cache.likes)
-        init_api()
+class RecommenderTestCase(FlaskTestCase):
 
-    def tearDown(self):
-        common_teardown()
+    def setUp(self):
+        super().setUp()
+        cache = Cache(db)
+        for i in range(10):
+            cache.add_many(random_likes(50))
+        self.likes = list(cache.likes)
+        reset_cache(app)
 
     def test_recommendations_api(self):
         for i in range(10):
@@ -139,14 +132,7 @@ class RecommenderTestCase(unittest.TestCase):
             self.assertEqual(result.status_code, 200)
         # print('result: %s' % result.data.decode())
 
-class MaintenanceTestCase(unittest.TestCase):
-    def setUp(self):
-        self.client = app.test_client()
-        common_setup()
-        init_api()
-
-    def tearDown(self):
-        common_teardown()
+class MaintenanceTestCase(FlaskTestCase):
 
     def test_maintenance_api(self):
         result = self.client.delete('/v1/maintenance/delete-all-data')

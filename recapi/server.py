@@ -1,6 +1,7 @@
-from flask import jsonify, current_app
+import os
+from flask import Flask, jsonify, current_app
 from flask_restful import Resource, reqparse, abort
-from recapi import app, api, db
+from recapi.extensions import api, db
 from recapi.cache import Cache, Like
 import re
 
@@ -57,15 +58,33 @@ class MaintenanceAPI(Resource):
         db.drop_all()
         db.create_all()
 
-api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='likes')
-api.add_resource(LikesBulkAPI, '/v1/likes/bulk', endpoint='likes_bulk')
-api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
-api.add_resource(MaintenanceAPI, '/v1/maintenance/delete-all-data', endpoint='maintenance')
+def create_app(config_object):
+    """
+    This factory method does not provide a ready app.
+    `reset_cache(app)` needs to be called for the cache to be initialized
+    or reset. Reasons:
+    - app cannot be recreated per test case (api endpoint duplicates!?)
+    - cache needs setup database, but tests purge it
+    """
+    app = Flask(__name__)
+    app.config.from_object(config_object)
+    db.init_app(app)
+    register_api_calls(api)
+    api.init_app(app)
+    return app
 
-def init_api():
+def register_api_calls(api):
+    api.add_resource(LikesAPI, '/v1/likes/user/<string:user_id>/item/<string:item_id>', endpoint='likes')
+    api.add_resource(LikesBulkAPI, '/v1/likes/bulk', endpoint='likes_bulk')
+    api.add_resource(RecommendationsAPI, '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
+    api.add_resource(MaintenanceAPI, '/v1/maintenance/delete-all-data', endpoint='maintenance')
+
+def reset_cache(app):
     with app.app_context():
         current_app.cache = Cache(db)
 
 if __name__ == '__main__':
-    init_api()
+    app = create_app(config_object=os.environ['APP_SETTINGS'])
+    reset_cache(app)
+    print('connected to db %s' % app.config['SQLALCHEMY_DATABASE_URI'])
     app.run()
