@@ -1,5 +1,6 @@
 from collections import namedtuple, defaultdict
 import numpy as np
+from flask import current_app
 from .models import DbLike
 from .recommender import Recommender
 import time
@@ -89,6 +90,8 @@ class Cache(object):
             users[pos] = user_id
         for item_id, pos in self.item_map.items():
             items[pos] = item_id
-        kwargs = dict(min_item_freq=5, min_user_freq=1)
+        kwargs = dict(
+            min_item_freq=current_app.config['RECOMMENDER_MIN_ITEM_FREQUENCY'],
+            min_user_freq=current_app.config['RECOMMENDER_MIN_USER_FREQUENCY'])
         self.recommender = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
         return self.recommender

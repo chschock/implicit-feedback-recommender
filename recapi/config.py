@@ -6,6 +6,12 @@ class Config(object):
     TESTING = False
     CSRF_ENABLED = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Customization
+    RECOMMENDER_DEFAULT_COUNT = 10
+    RECOMMENDER_ALPHA = 3
+    RECOMMENDER_BETA = 0.01
+    RECOMMENDER_MIN_ITEM_FREQUENCY = 5
+    RECOMMENDER_MIN_USER_FREQUENCY = 3
 
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']

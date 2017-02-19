@@ -5,7 +5,7 @@ import random
 import time
 import json
 
-from flask import Flask
+from flask import Flask, current_app
 from recapi.server import create_app, reset_cache
 from recapi.config import TestingConfig
 from recapi.extensions import db, api
@@ -125,11 +125,25 @@ class RecommenderTestCase(FlaskTestCase):
         self.likes = list(cache.likes)
         reset_cache(self.app)
 
-    def test_recommendations_api(self):
-        for i in range(10):
-            result = self.client.get('/v1/recommendations/user/' + self.likes[i].user_id)
-            self.assertEqual(result.status_code, 200)
-        # print('result: %s' % result.data.decode())
+    def _check_response(self, response, count):
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(json.loads(response.data.decode())), count)
+
+    def test_recommendations_api_count(self):
+        res = self.client.get(
+            '/v1/recommendations/user/{}'.format(self.likes[0].user_id))
+        self._check_response(res, current_app.config['RECOMMENDER_DEFAULT_COUNT'])
+        for i, count in enumerate(range(100, 5)):
+            res = self.client.get(
+                '/v1/recommendations/user/{}?count={}'.format(
+                    self.likes[i].user_id, count))
+            self._check_response(res, count)
+        res = self.client.get('/v1/recommendations/user/asdf?count=-1')
+        self.assertEqual(res.status_code, 404)
+
+    def test_recommendations_api_user(self):
+        res = self.client.get('/v1/recommendations/user/()(123')
+        self.assertEqual(res.status_code, 404)
 
 class MaintenanceTestCase(FlaskTestCase):
 

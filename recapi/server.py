@@ -7,30 +7,30 @@ import re
 
 ID_REGEX = re.compile(r'[a-zA-Z0-9\-_]+')
 
-def abort_if_no_id(string, hint):
-    if ID_REGEX.match(string) is None and False:
+def abort_if_bad_id(string, hint):
+    if ID_REGEX.match(string) is None:
         abort(404, message="'{}' is not valid {}".format(string, hint))
 
 class LikesAPI(Resource):
 
     def post(self, user_id, item_id):
-        abort_if_no_id(user_id, 'user_id')
-        abort_if_no_id(user_id, 'item_id')
+        abort_if_bad_id(user_id, 'user_id')
+        abort_if_bad_id(user_id, 'item_id')
         current_app.cache.add(Like(user_id, item_id))
 
     def delete(self, user_id, item_id):
-        abort_if_no_id(user_id, 'user_id')
-        abort_if_no_id(user_id, 'item_id')
+        abort_if_bad_id(user_id, 'user_id')
+        abort_if_bad_id(user_id, 'item_id')
         current_app.cache.delete(Like(user_id, item_id))
 
-def abort_if_no_likes(likes):
+def abort_if_bad_likes(likes):
     for like in likes:
         if not isinstance(like, list):
             abort(404, message="{} is not a list".format(like))
         if not len(like) == 2:
             abort(404, message="{} is not of length 2".format(like))
-        abort_if_no_id(like[0], 'bulk user_id')
-        abort_if_no_id(like[1], 'bulk item_id')
+        abort_if_bad_id(like[0], 'bulk user_id')
+        abort_if_bad_id(like[1], 'bulk item_id')
 
 class LikesBulkAPI(Resource):
     def __init__(self):
@@ -40,16 +40,31 @@ class LikesBulkAPI(Resource):
 
     def post(self):
         args = self.reqparse.parse_args()
-        abort_if_no_likes(args['likes'])
+        abort_if_bad_likes(args['likes'])
         likes = [Like(pair[0], pair[1]) for pair in args['likes']]
         current_app.cache.add_many(likes)
 
+def abort_if_bad_count(count):
+    if count < 0:
+        abort(404, message="{} is negative count".format(count))
+
 class RecommendationsAPI(Resource):
+    def __init__(self):
+        self.alpha = current_app.config['RECOMMENDER_ALPHA']
+        self.beta = current_app.config['RECOMMENDER_BETA']
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument(
+            'count', type=int, required=False, location='args',
+            default=current_app.config['RECOMMENDER_DEFAULT_COUNT'])
+        super().__init__()
 
     def get(self, user_id):
-        abort_if_no_id(user_id, 'user_id')
+        args = self.reqparse.parse_args()
+        abort_if_bad_id(user_id, 'user_id')
+        abort_if_bad_count(args['count'])
         rmdr = current_app.cache.build_recommender()
-        result = rmdr.recommend(user_id, 10, alpha=2, beta=0.5)
+        result = rmdr.recommend(
+            user_id, args['count'], alpha=self.alpha, beta=self.beta)
         return jsonify(result)
 
 class MaintenanceAPI(Resource):
