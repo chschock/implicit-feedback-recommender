@@ -142,6 +142,8 @@ class RecommenderTestCase(FlaskTestCase):
         self.assertEqual(res.status_code, 404)
 
     def test_recommendations_api_user(self):
+        res = self.client.get('/v1/recommendations/user/asdf')
+        self.assertEqual(res.status_code, 200)
         res = self.client.get('/v1/recommendations/user/()(123')
         self.assertEqual(res.status_code, 404)
 
