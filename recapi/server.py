@@ -60,17 +60,14 @@ class MaintenanceAPI(Resource):
 
 def create_app(config_object):
     """
-    This factory method does not provide a ready app.
-    `reset_cache(app)` needs to be called for the cache to be initialized
-    or reset. Reasons:
-    - app cannot be recreated per test case (api endpoint duplicates!?)
-    - cache needs setup database, but tests purge it
+    Factory method to build the app with db, api and cache.
     """
     app = Flask(__name__)
     app.config.from_object(config_object)
     db.init_app(app)
     register_api_calls(api)
     api.init_app(app)
+    reset_cache(app)
     return app
 
 def register_api_calls(api):
@@ -80,11 +77,16 @@ def register_api_calls(api):
     api.add_resource(MaintenanceAPI, '/v1/maintenance/delete-all-data', endpoint='maintenance')
 
 def reset_cache(app):
+    """
+    Reloads data from the db. In testing condition db content is purged, so it's
+    created here.
+    """
     with app.app_context():
+        if app.config['TESTING']:
+            db.create_all()
         current_app.cache = Cache(db)
 
 if __name__ == '__main__':
     app = create_app(config_object=os.environ['APP_SETTINGS'])
-    reset_cache(app)
-    print('connected to db %s' % app.config['SQLALCHEMY_DATABASE_URI'])
+    app.logger.info('connected to db %s' % app.config['SQLALCHEMY_DATABASE_URI'])
     app.run()

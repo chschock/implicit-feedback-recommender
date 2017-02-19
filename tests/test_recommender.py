@@ -8,7 +8,7 @@ import json
 from flask import Flask
 from recapi.server import create_app, reset_cache
 from recapi.config import TestingConfig
-from recapi.extensions import db
+from recapi.extensions import db, api
 from recapi.models import DbLike
 from recapi.cache import Cache, Like
 
@@ -18,9 +18,6 @@ USER_IDS = [a + b + c for a in UC for b in LC for c in LC]
 ITEM_IDS = [a + b for a in LC for b in LC]
 LIKES = [Like(user, item) for user in USER_IDS for item in ITEM_IDS]
 
-app = create_app(TestingConfig)
-app.config.from_object(TestingConfig)
-
 def random_like():
     return Like(random.choice(USER_IDS[:5]), random.choice(ITEM_IDS[:5]))
 
@@ -29,17 +26,19 @@ def random_likes(count):
 
 class FlaskTestCase(unittest.TestCase):
     def setUp(self):
-        self.app_context = app.app_context()
+        self.app = create_app(TestingConfig)
+        self.app_context = self.app.app_context()
         self.app_context.push()
         db.session.remove()
         db.drop_all()
         db.create_all()
-        reset_cache(app)
-        self.client = app.test_client()
+        reset_cache(self.app)
+        self.client = self.app.test_client()
 
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+        api.resources.clear()
         self.app_context.pop()
 
 class CacheTestCase(FlaskTestCase):
@@ -124,7 +123,7 @@ class RecommenderTestCase(FlaskTestCase):
         for i in range(10):
             cache.add_many(random_likes(50))
         self.likes = list(cache.likes)
-        reset_cache(app)
+        reset_cache(self.app)
 
     def test_recommendations_api(self):
         for i in range(10):
