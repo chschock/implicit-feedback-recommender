@@ -5,10 +5,14 @@ import requests
 import json
 import random
 import time
+import re
 from urllib.parse import urljoin
 
 
 BATCH_SIZE = 10000
+no_id = re.compile(r'[^a-zA-Z0-9\-_]')
+def idlize(string):
+    return no_id.sub('', string)
 
 def load(likefile):
     user_item_tuples = []
@@ -18,7 +22,7 @@ def load(likefile):
         for row in r:
             if row[2] != '0' and row[2] < '5':
                 continue
-            user_item_tuples.append((row[0], row[1]))
+            user_item_tuples.append((idlize(row[0]), idlize(row[1])))
     return user_item_tuples
 
 
@@ -42,10 +46,13 @@ def ingest(likefile, url, delete_all_data):
 
     for i in range(0, len(user_item_tuples), BATCH_SIZE):
         data = {'likes': user_item_tuples[i: i+BATCH_SIZE]}
-        requests.request('POST',
+        res = requests.request('POST',
             _url('/v1/likes/bulk'),
             data=json.dumps(data),
             headers={'content-type':'application/json'})
+        if res.status_code != 200:
+            print(res.content)
+
 
 @grp.command()
 @click.argument('likefile', type=click.Path())
