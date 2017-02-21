@@ -15,12 +15,12 @@ class LikesAPI(Resource):
 
     def post(self, user_id, item_id):
         abort_if_bad_id(user_id, 'user_id')
-        abort_if_bad_id(user_id, 'item_id')
+        abort_if_bad_id(item_id, 'item_id')
         current_app.cache.add(Like(user_id, item_id))
 
     def delete(self, user_id, item_id):
         abort_if_bad_id(user_id, 'user_id')
-        abort_if_bad_id(user_id, 'item_id')
+        abort_if_bad_id(item_id, 'item_id')
         current_app.cache.delete(Like(user_id, item_id))
 
 def abort_if_bad_likes(likes):
@@ -108,4 +108,4 @@ def reset_cache(app):
 if __name__ == '__main__':
     app = create_app(config_object=os.environ['APP_SETTINGS'])
     app.logger.info('connected to db %s' % app.config['SQLALCHEMY_DATABASE_URI'])
-    app.run()
+    app.run(port=app.config['PORT'])

@@ -18,6 +18,9 @@ USER_IDS = [a + b + c for a in UC for b in LC for c in LC]
 ITEM_IDS = [a + b for a in LC for b in LC]
 LIKES = [Like(user, item) for user in USER_IDS for item in ITEM_IDS]
 
+BAD_USER = ')user('
+BAD_ITEM = ')item('
+
 def random_like():
     return Like(random.choice(USER_IDS[:5]), random.choice(ITEM_IDS[:5]))
 
@@ -77,23 +80,36 @@ class CacheTestCase(FlaskTestCase):
 
 class LikesTestCase(FlaskTestCase):
 
-    def test_likes_api_post(self):
+    def test_likes_api_post_and_delete(self):
         unique_likes = random_likes(20)
         extra_likes = unique_likes[:10]
         for user_id, item_id in unique_likes + extra_likes:
-            result = self.client.post('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
-        self.assertEqual(result.status_code, 200)
+            result = self.client.post(
+                '/v1/likes/user/' + user_id + '/item/' + item_id, data={})
+            self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), len(unique_likes))
-
-    def test_likes_api_delete(self):
-        unique_likes = random_likes(20)
-        extra_likes = unique_likes[:10]
-        for user_id, item_id in unique_likes:
-            result = self.client.post('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
         for user_id, item_id in extra_likes:
-            result = self.client.delete('/v1/likes/user/' + user_id + '/item/' + item_id, data={})
-        self.assertEqual(result.status_code, 200)
-        self.assertEqual(len(DbLike.query.all()), len(unique_likes) - len(extra_likes))
+            result = self.client.delete(
+                '/v1/likes/user/' + user_id + '/item/' + item_id, data={})
+            self.assertEqual(result.status_code, 200)
+
+    def test_likes_api_post_invalid_ids(self):
+        like = LIKES[0]
+        result = self.client.post(
+            '/v1/likes/user/' + BAD_USER + '/item/' + like.item_id, data={})
+        self.assertEqual(result.status_code, 404)
+        result = self.client.post(
+            '/v1/likes/user/' + like.user_id + '/item/' + BAD_ITEM, data={})
+        self.assertEqual(result.status_code, 404)
+
+    def test_likes_api_delete_invalid_ids(self):
+        like = LIKES[0]
+        result = self.client.delete(
+            '/v1/likes/user/' + BAD_USER + '/item/' + like.item_id, data={})
+        self.assertEqual(result.status_code, 404)
+        result = self.client.delete(
+            '/v1/likes/user/' + like.user_id + '/item/' + BAD_ITEM, data={})
+        self.assertEqual(result.status_code, 404)
 
     def test_likes_bulk_api_post(self):
         unique_likes = random_likes(20)
@@ -115,6 +131,31 @@ class LikesTestCase(FlaskTestCase):
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), 0)
 
+    def test_likes_bulk_api_post_invalid(self):
+        unique_likes = random_likes(20)
+
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps({'likes': 'rubbish'}),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 404)
+
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps({'likes': unique_likes + [Like(BAD_USER, 'item')]}),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 404)
+
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps({'likes': unique_likes + [Like('user', BAD_ITEM)]}),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 404)
+
+        result = self.client.post('/v1/likes/bulk',
+            data=json.dumps({'likes': unique_likes + [('no_like',)]}),
+            headers={'content-type':'application/json'})
+        self.assertEqual(result.status_code, 404)
+
+        self.assertEqual(len(DbLike.query.all()), 0)
+
 class RecommenderTestCase(FlaskTestCase):
 
     def setUp(self):
@@ -129,7 +170,7 @@ class RecommenderTestCase(FlaskTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.data.decode())), count)
 
-    def test_recommendations_api_count(self):
+    def test_recommendations_api(self):
         res = self.client.get(
             '/v1/recommendations/user/{}'.format(self.likes[0].user_id))
         self._check_response(res, current_app.config['RECOMMENDER_DEFAULT_COUNT'])
@@ -141,14 +182,23 @@ class RecommenderTestCase(FlaskTestCase):
         res = self.client.get('/v1/recommendations/user/asdf?count=-1')
         self.assertEqual(res.status_code, 404)
 
-    def test_recommendations_api_user(self):
+    def test_recommendations_api_unknown_user(self):
         res = self.client.get('/v1/recommendations/user/asdf')
         self.assertEqual(res.status_code, 200)
-        res = self.client.get('/v1/recommendations/user/()(123')
+
+    def test_recommendations_api_unknown_invalid(self):
+        res = self.client.get('/v1/recommendations/user/asdf?count=-1')
+        self.assertEqual(res.status_code, 404)
+        res = self.client.get('/v1/recommendations/user/' + BAD_USER)
         self.assertEqual(res.status_code, 404)
 
 class MaintenanceTestCase(FlaskTestCase):
 
     def test_maintenance_api(self):
+        like = LIKES[0]
+        result = self.client.post(
+            '/v1/likes/user/' + like.user_id + '/item/' + like.item_id, data={})
+
         result = self.client.delete('/v1/maintenance/delete-all-data')
         self.assertEqual(result.status_code, 200)
+        self.assertEqual(len(DbLike.query.all()), 0)
