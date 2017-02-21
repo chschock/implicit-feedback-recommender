@@ -72,6 +72,7 @@ class MaintenanceAPI(Resource):
     def delete(self):
         db.drop_all()
         db.create_all()
+        reset_cache(current_app)
 
 def create_app(config_object):
     """

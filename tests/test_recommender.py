@@ -42,6 +42,12 @@ class FlaskTestCase(unittest.TestCase):
         api.resources.clear()
         self.app_context.pop()
 
+    def check_cache_content_is(self, likes, cache):
+        self.assertEqual(len(likes), len([like.tuple for like in DbLike.query.all()]))
+        self.assertCountEqual(likes, [like.tuple for like in DbLike.query.all()])
+        self.assertCountEqual(likes, cache.likes)
+
+
 class CacheTestCase(FlaskTestCase):
 
     def test_db_insert_unique(self):
@@ -50,8 +56,8 @@ class CacheTestCase(FlaskTestCase):
             like = DbLike(user_id, item_id)
             db.session.add(like)
         db.session.commit()
-        res = [like.tuple for like in DbLike.query.all()]
-        self.assertCountEqual(unique_likes, res)
+        self.assertCountEqual(
+            unique_likes, [like.tuple for like in DbLike.query.all()])
 
     def test_cache_add_many(self):
         unique_likes = random_likes(1000)
@@ -59,7 +65,7 @@ class CacheTestCase(FlaskTestCase):
         cache = Cache(db)
         cache.add_many(unique_likes)
         cache.add_many(extra_likes)
-        self.assertCountEqual(cache.likes, unique_likes)
+        self.check_cache_content_is(unique_likes, cache)
 
     def test_cache_add(self):
         unique_likes = random_likes(20)
@@ -67,13 +73,13 @@ class CacheTestCase(FlaskTestCase):
         cache = Cache(db)
         for like in unique_likes + extra_likes:
             cache.add(like)
-        self.assertCountEqual(cache.likes, unique_likes)
+        self.check_cache_content_is(unique_likes, cache)
 
     def test_cache_persistence(self):
         unique_likes = random_likes(1000)
         Cache(db).add_many(unique_likes)
         cache = Cache(db)
-        self.assertCountEqual(cache.likes, unique_likes)
+        self.check_cache_content_is(unique_likes, cache)
 
 
 class LikesTestCase(FlaskTestCase):
@@ -152,7 +158,7 @@ class LikesTestCase(FlaskTestCase):
             headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 404)
 
-        self.assertEqual(len(DbLike.query.all()), 0)
+        self.check_cache_content_is([], current_app.cache)
 
 class RecommenderTestCase(FlaskTestCase):
 
@@ -199,4 +205,4 @@ class MaintenanceTestCase(FlaskTestCase):
 
         result = self.client.delete('/v1/maintenance/delete-all-data')
         self.assertEqual(result.status_code, 200)
-        self.assertEqual(len(DbLike.query.all()), 0)
+        self.check_cache_content_is([], current_app.cache)
