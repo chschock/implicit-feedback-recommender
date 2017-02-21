@@ -105,6 +105,7 @@ def reset_cache(app):
             db.create_all()
         current_app.cache = Cache(db)
 
+
 if __name__ == '__main__':
     app = create_app(config_object=os.environ['APP_SETTINGS'])
     app.logger.info('connected to db %s' % app.config['SQLALCHEMY_DATABASE_URI'])

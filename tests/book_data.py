@@ -18,7 +18,7 @@ def load(likefile):
     user_item_tuples = []
     with open(likefile, encoding='latin1') as f:
         r = csv.reader(f, delimiter=';', skipinitialspace=True, quoting=csv.QUOTE_ALL)
-        next(r) # header row
+        next(r)  # header row
         for row in r:
             if row[2] != '0' and row[2] < '5':
                 continue
@@ -45,11 +45,11 @@ def ingest(likefile, url, delete_all_data):
     user_item_tuples = load(likefile)
 
     for i in range(0, len(user_item_tuples), BATCH_SIZE):
-        data = {'likes': user_item_tuples[i: i+BATCH_SIZE]}
+        data = {'likes': user_item_tuples[i: i + BATCH_SIZE]}
         res = requests.request('POST',
             _url('/v1/likes/bulk'),
             data=json.dumps(data),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         if res.status_code != 200:
             print(res.content)
 
@@ -70,7 +70,8 @@ def recommend(likefile, count, url):
         res = requests.request('GET',
             _url('/v1/recommendations/user/{}?count={}'.format(user_id, 6)))
         print(res.json())
-    print('querying took %4.2f seconds' % (time.time()-start))
+    print('querying took %4.2f seconds' % (time.time() - start))
+
 
 if __name__ == '__main__':
     grp()

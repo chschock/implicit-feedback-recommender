@@ -3,7 +3,6 @@ import numpy as np
 from flask import current_app
 from .models import DbLike
 from .recommender import Recommender
-import time
 Like = namedtuple('Like', 'user_id item_id')
 
 REBUILD_RECOMMENDER_CHANGE_THRESHOLD = 100

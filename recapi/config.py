@@ -6,6 +6,7 @@ class Config(object):
     TESTING = False
     CSRF_ENABLED = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    PORT = 5000
     # Customization
     RECOMMENDER_DEFAULT_COUNT = 10
     RECOMMENDER_ALPHA = 3

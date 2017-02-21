@@ -10,8 +10,8 @@ FLT = np.float32
 # cosine similarity of sparse row vectors and sparse row vector
 def spacos(vecs, vec):
     div1 = np.sqrt(vecs.multiply(vecs).sum(axis=1))
-    div2 = np.sqrt(vec.multiply(vec).sum(axis=1)[0,0])
-    return (vecs * vec.T).multiply(1./div1/div2)
+    div2 = np.sqrt(vec.multiply(vec).sum(axis=1)[0, 0])
+    return (vecs * vec.T).multiply(1. / div1 / div2)
 
 # cosine similarity of sparse row vectors and sparse row vector
 def spadot(vecs, vec):
@@ -78,11 +78,11 @@ class Recommender(object):
                 item_score[(uim[i_user, :] > 0).tocoo().col] = 0
         else:
             item_score = self.popularity_item_bias
-        item_order = np.argsort(item_score)[-1:-n_rec-1:-1]
+        item_order = np.argsort(item_score)[-1: -n_rec - 1: -1]
 
         if return_indices:
             return OrderedDict([(i, item_score[i]) for i in item_order])
-        return [(self.items[i], round(float(item_score[i]),6)) for i in item_order]
+        return [(self.items[i], round(float(item_score[i]), 6)) for i in item_order]
 
 
 # for evaluation
@@ -103,7 +103,7 @@ def build_recommender_from_triples(user_item_rating_triples, **kwargs):
     ratings = np.array(ratings, dtype=np.int32)
 
     rmdr = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
-    print('construction took %4.2f secs' % (time.time()-start))
+    print('construction took %4.2f secs' % (time.time() - start))
     return rmdr
 
 # assessment metric
@@ -122,6 +122,6 @@ def ranking_stat(rmdr, samples, seed, **kwargs):
         # n_unseen_items = n_items - (uim[i_user, :] > 0).sum()
         uim[i_user, i_item] = tmp
 
-        rank = list(rec_items.keys()).index(i_item) / n_items # n_unseen_items
+        rank = list(rec_items.keys()).index(i_item) / n_items  # n_unseen_items
         ranks.append(rank)
     return ranks

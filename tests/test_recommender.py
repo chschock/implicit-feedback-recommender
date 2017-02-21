@@ -1,11 +1,9 @@
-import os
 import unittest
 import string
 import random
-import time
 import json
 
-from flask import Flask, current_app
+from flask import current_app
 from recapi.server import create_app, reset_cache
 from recapi.config import TestingConfig
 from recapi.extensions import db, api
@@ -119,7 +117,7 @@ class LikesTestCase(FlaskTestCase):
         }
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps(data),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), len(unique_likes))
 
@@ -127,7 +125,7 @@ class LikesTestCase(FlaskTestCase):
         data = {'likes': []}
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps(data),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 200)
         self.assertEqual(len(DbLike.query.all()), 0)
 
@@ -136,22 +134,22 @@ class LikesTestCase(FlaskTestCase):
 
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps({'likes': 'rubbish'}),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 404)
 
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps({'likes': unique_likes + [Like(BAD_USER, 'item')]}),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 404)
 
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps({'likes': unique_likes + [Like('user', BAD_ITEM)]}),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 404)
 
         result = self.client.post('/v1/likes/bulk',
             data=json.dumps({'likes': unique_likes + [('no_like',)]}),
-            headers={'content-type':'application/json'})
+            headers={'content-type': 'application/json'})
         self.assertEqual(result.status_code, 404)
 
         self.assertEqual(len(DbLike.query.all()), 0)
