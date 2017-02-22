@@ -73,5 +73,17 @@ def recommend(likefile, count, url):
     print('querying took %4.2f seconds' % (time.time() - start))
 
 
+@grp.command()
+@click.option('--url', default="http://127.0.0.1:5000/", type=click.STRING)
+@click.option('--delete-all-data', default=False, is_flag=True)
+def maintenance(likefile, url, delete_all_data):
+
+    def _url(endpoint):
+        return urljoin(url, endpoint)
+
+    if delete_all_data:
+        requests.request('DELETE', _url('v1/maintenance/delete-all-data'))
+
+
 if __name__ == '__main__':
     grp()

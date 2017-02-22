@@ -198,7 +198,7 @@ class RecommenderTestCase(FlaskTestCase):
 
 class MaintenanceTestCase(FlaskTestCase):
 
-    def test_maintenance_api(self):
+    def test_maintenance_delete(self):
         like = LIKES[0]
         result = self.client.post(
             '/v1/likes/user/' + like.user_id + '/item/' + like.item_id, data={})
@@ -206,3 +206,9 @@ class MaintenanceTestCase(FlaskTestCase):
         result = self.client.delete('/v1/maintenance/delete-all-data')
         self.assertEqual(result.status_code, 200)
         self.check_cache_content_is([], current_app.cache)
+
+class StatisticsTestCase(FlaskTestCase):
+
+    def test_maintenance_get(self):
+        result = self.client.get('/v1/statistics')
+        self.assertEqual(result.status_code, 200)

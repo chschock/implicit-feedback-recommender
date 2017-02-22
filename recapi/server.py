@@ -74,6 +74,21 @@ class MaintenanceAPI(Resource):
         db.create_all()
         reset_cache(current_app)
 
+class StatAPI(Resource):
+
+    def get(self):
+        cache = current_app.cache
+        stat = {}
+        try:
+            stat['number of items'] = len(cache.item_map)
+            stat['number of users'] = len(cache.user_map)
+            stat['number of active items'] = len(cache.recommender.items)
+            stat['number of active users'] = len(cache.recommender.users)
+        except:
+            pass
+        return jsonify(stat)
+
+
 def create_app(config_object):
     """
     Factory method to build the app with db, api and cache.
@@ -95,6 +110,8 @@ def register_api_calls(api):
         '/v1/recommendations/user/<string:user_id>', endpoint='recommendations')
     api.add_resource(MaintenanceAPI,
         '/v1/maintenance/delete-all-data', endpoint='maintenance')
+    api.add_resource(StatAPI,
+        '/v1/statistics', endpoint='statistics')
 
 def reset_cache(app):
     """
