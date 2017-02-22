@@ -77,11 +77,17 @@ class Cache(object):
         return (self.recommender is None or
             self.changes >= REBUILD_RECOMMENDER_CHANGE_THRESHOLD)
 
-    def build_recommender(self):
-        if not self.out_of_date():
-            return self.recommender
-        current_app.logger.info('building recommender')
+    def get_recommender(self):
+        kwargs = dict(
+            min_item_freq=current_app.config['RECOMMENDER_MIN_ITEM_FREQUENCY'],
+            min_user_freq=current_app.config['RECOMMENDER_MIN_USER_FREQUENCY'])
+        if self.out_of_date():
+            current_app.logger.info('building recommender')
+            self.recommender = self._build_recommender(**kwargs)
+            self.changes = 0
+        return self.recommender
 
+    def _build_recommender(self, **kwargs):
         user_ics = np.array(self.user_ics, dtype=np.uint32)
         item_ics = np.array(self.item_ics, dtype=np.uint32)
         ratings = np.array(self.ratings, dtype=np.int32)
@@ -90,9 +96,4 @@ class Cache(object):
             users[pos] = user_id
         for item_id, pos in self.item_map.items():
             items[pos] = item_id
-        kwargs = dict(
-            min_item_freq=current_app.config['RECOMMENDER_MIN_ITEM_FREQUENCY'],
-            min_user_freq=current_app.config['RECOMMENDER_MIN_USER_FREQUENCY'])
-        self.recommender = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
-        self.changes = 0
-        return self.recommender
+        return Recommender(user_ics, item_ics, ratings, users, items, **kwargs)

@@ -54,14 +54,20 @@ class Recommender(object):
         # # square: no consistent improvement
         # self.M_w.data = np.power(self.M_w.data, 2)
 
-        # normalize for cosine similarity
-        self.M_w = normalize(self.M_w, axis=1, norm='l2')
-        self.M_0 = sparse.csr_matrix(self.M_w.shape)
+        if self.M.shape[0] == 0 or self.M.shape[1] == 0:
+            # unless we have data in M, no recommendations at all
+            self.M_w = sparse.csr_matrix((0, 0), dtype=FLT)
+            self.popularity_item_bias = np.zeros(shape=[0], dtype=FLT)
+        else:
+            # normalize for cosine similarity
+            self.M_w = normalize(self.M_w, axis=1, norm='l2')
 
-        # item bias
-        self.popularity_item_bias = np.array(
-            normalize(self.M.sum(axis=0), axis=1, norm='l1'), dtype=FLT).ravel()
-        self.zero_item_bias = np.zeros(self.M.shape[1], dtype=FLT)
+            # item bias
+            self.popularity_item_bias = np.array(
+                normalize(self.M.sum(axis=0), axis=1, norm='l1'), dtype=FLT).ravel()
+
+        self.M_0 = sparse.csr_matrix(self.M_w.shape)
+        self.zero_item_bias = np.zeros(self.M_w.shape[1], dtype=FLT)
 
     def recommend(self, user_id, n_rec, alpha=1, beta=1,
             remove_seen=True, no_mat=False, no_bias=False, return_indices=False):

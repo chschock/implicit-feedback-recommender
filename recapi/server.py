@@ -62,7 +62,7 @@ class RecommendationsAPI(Resource):
         args = self.reqparse.parse_args()
         abort_if_bad_id(user_id, 'user_id')
         abort_if_bad_count(args['count'])
-        rmdr = current_app.cache.build_recommender()
+        rmdr = current_app.cache.get_recommender()
         result = rmdr.recommend(
             user_id, args['count'], alpha=self.alpha, beta=self.beta)
         return jsonify(result)

@@ -85,10 +85,20 @@ class CacheTestCase(FlaskTestCase):
         unique_likes = random_likes(1000)
         cache = Cache(db)
         cache.add_many(unique_likes)
-        rec1 = cache.build_recommender()
-        rec2 = cache.build_recommender()
+        rec1 = cache.get_recommender()
+        rec2 = cache.get_recommender()
         self.assertEqual(rec1, rec2)
 
+    def test_empty_recommender(self):
+        cache = Cache(db)
+        cache.get_recommender()
+        cache.add_many([Like(uid, uid) for uid in USER_IDS])
+        r = cache._build_recommender(min_item_freq=2, min_user_freq=2)
+        self.assertEqual(r.recommend('xyz', 10), [])
+        r = cache._build_recommender(min_item_freq=2, min_user_freq=1)
+        self.assertEqual(r.recommend('xyz', 10), [])
+        r = cache._build_recommender(min_item_freq=1, min_user_freq=2)
+        self.assertEqual(r.recommend('xyz', 10), [])
 
 class LikesTestCase(FlaskTestCase):
 
