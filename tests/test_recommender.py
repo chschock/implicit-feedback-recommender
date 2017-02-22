@@ -81,6 +81,14 @@ class CacheTestCase(FlaskTestCase):
         cache = Cache(db)
         self.check_cache_content_is(unique_likes, cache)
 
+    def test_caching(self):
+        unique_likes = random_likes(1000)
+        cache = Cache(db)
+        cache.add_many(unique_likes)
+        rec1 = cache.build_recommender()
+        rec2 = cache.build_recommender()
+        self.assertEqual(rec1, rec2)
+
 
 class LikesTestCase(FlaskTestCase):
 

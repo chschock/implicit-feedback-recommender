@@ -80,6 +80,7 @@ class Cache(object):
     def build_recommender(self):
         if not self.out_of_date():
             return self.recommender
+        current_app.logger.info('building recommender')
 
         user_ics = np.array(self.user_ics, dtype=np.uint32)
         item_ics = np.array(self.item_ics, dtype=np.uint32)
@@ -93,4 +94,5 @@ class Cache(object):
             min_item_freq=current_app.config['RECOMMENDER_MIN_ITEM_FREQUENCY'],
             min_user_freq=current_app.config['RECOMMENDER_MIN_USER_FREQUENCY'])
         self.recommender = Recommender(user_ics, item_ics, ratings, users, items, **kwargs)
+        self.changes = 0
         return self.recommender
