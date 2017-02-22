@@ -6,8 +6,7 @@ import json
 import random
 import time
 import re
-from urllib.parse import urljoin
-
+from urllib.parse import urljoin as join
 
 BATCH_SIZE = 10000
 no_id = re.compile(r'[^a-zA-Z0-9\-_]')
@@ -36,18 +35,15 @@ def grp():
 @click.option('--delete-all-data', default=False, is_flag=True)
 def ingest(likefile, url, delete_all_data):
 
-    def _url(endpoint):
-        return urljoin(url, endpoint)
-
     if delete_all_data:
-        requests.request('DELETE', _url('v1/maintenance/delete-all-data'))
+        requests.request('DELETE', join(url, 'v1/maintenance/delete-all-data'))
 
     user_item_tuples = load(likefile)
 
     for i in range(0, len(user_item_tuples), BATCH_SIZE):
         data = {'likes': user_item_tuples[i: i + BATCH_SIZE]}
         res = requests.request('POST',
-            _url('/v1/likes/bulk'),
+            join(url, '/v1/likes/bulk'),
             data=json.dumps(data),
             headers={'content-type': 'application/json'})
         if res.status_code != 200:
@@ -60,15 +56,12 @@ def ingest(likefile, url, delete_all_data):
 @click.option('--url', default="http://127.0.0.1:5000/", type=click.STRING)
 def recommend(likefile, count, url):
 
-    def _url(endpoint):
-        return urljoin(url, endpoint)
-
     user_item_tuples = load(likefile)
 
     start = time.time()
     for user_id, item_id in random.sample(user_item_tuples, count):
         res = requests.request('GET',
-            _url('/v1/recommendations/user/{}?count={}'.format(user_id, 6)))
+            join(url, '/v1/recommendations/user/{}?count={}'.format(user_id, 6)))
         print(res.json())
     print('querying took %4.2f seconds' % (time.time() - start))
 
@@ -76,13 +69,18 @@ def recommend(likefile, count, url):
 @grp.command()
 @click.option('--url', default="http://127.0.0.1:5000/", type=click.STRING)
 @click.option('--delete-all-data', default=False, is_flag=True)
-def maintenance(likefile, url, delete_all_data):
-
-    def _url(endpoint):
-        return urljoin(url, endpoint)
+def maintenance(url, delete_all_data):
 
     if delete_all_data:
-        requests.request('DELETE', _url('v1/maintenance/delete-all-data'))
+        requests.request('DELETE', join(url, 'v1/maintenance/delete-all-data'))
+
+
+@grp.command()
+@click.option('--url', default="http://127.0.0.1:5000/", type=click.STRING)
+def statistics(url):
+
+    res = requests.request('GET', join(url, 'v1/statistics'))
+    print(res.json())
 
 
 if __name__ == '__main__':
