@@ -1,6 +1,23 @@
 # Introduction
 
-All shell commands assume you are in the root directory of the app.
+This recommender system is designed to do recommendation for positive only
+feedback. This could be explicit likes or implicit interaction data of
+users with some sort of item. It works model free and implements a neighbourhood
+based method that, given a user, finds items that were interacted with by
+users with a similar profile.
+
+Depending on the parameters and data, building the model
+on about a million interactions takes in the order of magnitude of a second.
+Recommending is in the order of magnitude of 50 milliseconds. The recommender
+is therefore cached until a certain amount of changes have occured, then
+it is rebuilt.
+
+There are two hyperparameters, alpha and beta. The jupyter notebook in
+experiment can serve as a guideline to implements a grid search for a
+ranking based metric.
+
+All shell commands in the following sections assume you are in the root
+directory of the app.
 
 # Installation
 
@@ -22,6 +39,14 @@ Authentication is accomplished by allowing the user running the app to connect
 to the databases (refer to pg_hpa.conf). Adapt the settings for development
 and production database in the files `dev-env.sh` and `prod-env.sh` if you
 chose different names than above or chose a password.
+
+# Run the tests
+
+```
+source dev-env.sh
+cd tests
+nosetests
+```
 
 # Configure app
 
